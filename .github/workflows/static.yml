@@ -46,7 +46,7 @@ name: Install Tailwind
 
       
 name: Build the project
-      run: npm run build -- --base=/JPacewicz_IFS_10/,
+      run: npm run build -- --base=/Nazwa10/,
 
       
 name: Upload artifact
