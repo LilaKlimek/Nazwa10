@@ -1,24 +1,42 @@
-import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.js'
+import './style.css';
+import { createClient } from '@supabase/supabase-js';
+import { format } from 'date-fns';
 
-document.querySelector('#app').innerHTML = `
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-    </a>
-    <h1>Hello Vite!</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
+const supabase = createClient('https://pncnndgusqhrlxxjfwuo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuY25uZGd1c3Focmx4eGpmd3VvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NjY5MjcsImV4cCI6MjA2MzI0MjkyN30.y4n4-HrPWtKlFu0GU01jGKCpSI1eeA6znOPiRJVaE1M');
+
+const articleList = document.querySelector('#article-list');
+const form = document.querySelector('#article-form');
+const sortSelect = document.querySelector('#sort-select');
+
+async function fetchArticles(sort = 'created_at.desc') {
+  const [field, direction] = sort.split('.');
+  const { data: article } = await supabase
+    .from('article')
+    .select('*')
+    .order(field, { ascending: direction === 'asc' });
+
+  articleList.innerHTML = article.map(article => `
+    <div class="border p-4 rounded shadow">
+      <h2 class="text-xl font-bold">${article.title}</h2>
+      <h3 class="italic text-gray-600">${article.subtitle}</h3>
+      <p class="text-sm text-gray-500">Autor: ${article.author}</p>
+      <p class="text-sm text-gray-500">Data: ${format(new Date(article.created_at), 'dd-MM-yyyy')}</p>
+      <p>${article.content}</p>
     </div>
-    <p class="read-the-docs">
-      Click on the Vite logo to learn more
-    </p>
-  </div>
-`
+  `).join('');
+}
 
-setupCounter(document.querySelector('#counter'))
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(form);
+  const newArticle = Object.fromEntries(formData.entries());
+  await supabase.from('article').insert([newArticle]);
+  form.reset();
+  fetchArticles(sortSelect.value);
+});
+
+sortSelect.addEventListener('change', () => {
+  fetchArticles(sortSelect.value);
+});
+
+fetchArticles();
